@@ -9,14 +9,14 @@
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js'></script>
 </head>
 
 <body>
     <div id='map' style='width: 100vw; height: 100vh;'></div>
 
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoiZWJlbmRhdmlkIiwiYSI6ImNscDZlczJoNTFwN2oycW80OTNzdHprOGMifQ.o__Ac9OeADqeeseNk3ay1A';
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZWJlbmRhdmlkIiwiYSI6ImNscDZlczJoNTFwN2oycW80OTNzdHprOGMifQ.o__Ac9OeADqeeseNk3ay1A'
 
         var map = new mapboxgl.Map({
             container: 'map',
@@ -26,7 +26,7 @@
         });
 
         // Load and parse the CSV file
-        Papa.parse('college_lat_long3.csv', {
+        Papa.parse('http://localhost:8080/college_website_data.csv', {
             header: true,
             download: true,
             skipEmptyLines: true,
@@ -36,19 +36,35 @@
 
                 // Add markers for each college
                 colleges.forEach(function (college) {
-                    // Ensure that the ug_size is a valid number
-                    var ugSize = college.ug_size;
-                    
-                    // Check if ug_size is a valid number before displaying
-                    new mapboxgl.Marker({
-                        color: 'teal', // Default marker color
-                        scale: 0.5 // Adjust the scale to make the marker smaller
-                    })                    
-                    
-                    
-                        .setLngLat([parseFloat(college.longitude), parseFloat(college.latitude)])
-                        .setPopup(new mapboxgl.Popup().setHTML('<h3>' + college.name + '</h3><p>Acceptance: ' + college.accept + '</h3><p>Size: ' + ugSize + '</p><a href="' + college.link + '" target="_blank">Visit Website</a>'))
-                        .addTo(map);
+                    // Clean up accept and ug_size before parsing
+                    var cleanedAccept = college.accept.replace(/%/g, '');
+                    var cleanedUgSize = college.ug_size.replace(/,/g, '');
+                    var cleanedScore = college.alma_score.replace(/,/g, '');
+
+                    // Parse cleaned values as floats
+                    var acceptanceRate = parseFloat(cleanedAccept);
+                    var ugSize = parseFloat(cleanedUgSize);
+                    var A_score = parseFloat(cleanedScore);
+
+                    // Check if values are valid numbers before displaying
+                    if (!isNaN(acceptanceRate) && !isNaN(ugSize)) {
+                        // Create the marker
+                        new mapboxgl.Marker({
+                            color: 'teal',
+                            scale: 0.5
+                        })
+                            .setLngLat([parseFloat(college.longitude), parseFloat(college.latitude)])
+                            .setPopup(new mapboxgl.Popup().setHTML(
+                                `<h3>${college.name}</h3>` +
+                                `<p>Acceptance: ${acceptanceRate}%</p>` +
+                                `<p>Size: ${ugSize}</p>` +
+                                `<p>Alma Score: ${A_score}</p>` +
+                                `<a href="${college.link}" target="_blank">Visit Website</a>`
+                            ))
+                            .addTo(map);
+                    } else {
+                        console.error('Invalid acceptance rate or ug_size for college: ' + college.name);
+                    }
                 });
             }
         });
@@ -56,41 +72,14 @@
 </body>
 
 </html>
+
+
+
 <!-- 
 
-<!DOCTYPE html>
-<html>
 
-<head>
-    <meta charset='utf-8' />
-    <title>College Map</title>
-    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-</head>
 
-<body>
-    <div id='map' style='width: 100vw; height: 100vh;'></div>
 
-    <script>
-        mapboxgl.accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
-
-        var map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-98, 38],
-            zoom: 4
-        });
-
-        // Load and parse the CSV file
-        Papa.parse('college_lat_long3.csv', {
-            header: true,
-            download: true,
-            skipEmptyLines: true,
-            complete: function (results) {
-                // Extracted college data from CSV
-                var colleges = results.data;
 
                 // Add markers for each college
                 colleges.forEach(function (college) {
@@ -100,7 +89,7 @@
                         scale: 0.5 // Adjust the scale to make the marker smaller
                     })
                         .setLngLat([parseFloat(college.longitude), parseFloat(college.latitude)])
-                        .setPopup(new mapboxgl.Popup().setHTML('<h3>' + college.name + '</h3><p>Acceptance: ' + college.accept + '</p><a href="' + college.link + '" target="_blank">Visit Website</a>'))
+                        .setPopup(new mapboxgl.Popup().setHTML('<h3>' + college.name + '</h3><p>Acceptance: ' + college.accept + '</h3><p>Size: ' + college.ug_size + '</p><a href="' + college.link + '" target="_blank">Visit Website</a>'))
                         .addTo(map);
                 });
             }
@@ -108,59 +97,4 @@
     </script>
 </body>
 
-</html>
-
-
-
-<body>
-    <div id='map' style='width: 100vw; height: 100vh;'></div>
-
-    <script>
-        mapboxgl.accessToken = 'Token';
-
-        var map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [-98, 38],
-            zoom: 4
-        });
-
-        // Load and parse the CSV file
-        Papa.parse('college_lat_long3.csv', {
-            header: true,
-            download: true,
-            skipEmptyLines: true,
-            complete: function (results) {
-                // Extracted college data from CSV
-                var colleges = results.data;
-
-                // Add markers for each college
-                colleges.forEach(function (college) {
-                    // Ensure that the ug_size is a valid number
-                    var ugSize = parseFloat(college.ug_size);
-
-                    // Check if ug_size is a valid number before displaying
-                    if (!isNaN(ugSize)) {
-                        // Create the marker
-                        new mapboxgl.Marker({
-                            color: 'teal',
-                            scale: 0.5
-                        })
-                            .setLngLat([parseFloat(college.longitude), parseFloat(college.latitude)])
-                            .setPopup(new mapboxgl.Popup().setHTML('<h3>' + college.name + '</h3><p>Acceptance: ' + college.accept + '</h3><p>Size: ' + ugSize + '</p><a href="' + college.link + '" target="_blank">Visit Website</a>'))
-                            .addTo(map);
-                    } else {
-                        console.error('Invalid ug_size for college: ' + college.name);
-                    }
-                });
-            }
-        });
-    </script>
-</body>
-
-
-
  -->
-
-
- 
